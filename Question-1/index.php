@@ -2,7 +2,7 @@
 
 // Define constants
 define('WINDOW_SIZE', 10);
-define('THIRD_PARTY_API_URL', 'http://20.244.56.144/test/even');
+define('THIRD_PARTY_API_URL', 'http://20.244.56.144/test/primes');
 define('TIMEOUT', 0.5);
 define('AUTH_TOKEN', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJNYXBDbGFpbXMiOnsiZXhwIjoxNzE3MjE5MzE0LCJpYXQiOjE3MTcyMTkwMTQsImlzcyI6IkFmZm9yZG1lZCIsImp0aSI6IjYwMGM1ZDExLTllYTUtNGJkZS04YWNlLTRiZTk2NTc2NTc0ZiIsInN1YiI6InNhaGlsc2hvd2thdDY3NUBnbWFpbC5jb20ifSwiY29tcGFueU5hbWUiOiJhbHBoYWNvZGVycyIsImNsaWVudElEIjoiNjAwYzVkMTEtOWVhNS00YmRlLThhY2UtNGJlOTY1NzY1NzRmIiwiY2xpZW50U2VjcmV0IjoiZlBSeFJPSEhNZmdKVUJDviIsIm93bmVyTmFtZSI6IlNhaGlsIiwib3duZXJFbWFpbCI6InNhaGlsc2hvd2thdDY3NUBnbWFpbC5jb20iLCJyb2xsTm8iOiIxMjYifQ.KRwQSFfwTJVMfdPi39z6fi44H_9rI4FXT8EhlRh6w0A');
 
@@ -20,7 +20,7 @@ class AverageCalculator {
         $response = $this->fetchNumbers($numberId);
 
         if ($response['status'] !== 200) {
-            $this->jsonResponse(['error' => 'Failed to fetch numbers'], 500);
+            $this->jsonResponse(['error' => 'Failed to fetch numbers. ' . $response['message']], 500);
         }
 
         $fetchedNumbers = $response['data']['numbers'];
@@ -58,10 +58,18 @@ class AverageCalculator {
         ];
 
         $context = stream_context_create($options);
-        $response = file_get_contents($url, false, $context);
+        $response = @file_get_contents($url, false, $context);
 
         if ($response === false) {
-            return ['status' => 500, 'data' => ['error' => 'Failed to fetch numbers']];
+            return ['status' => 500, 'message' => 'Failed to connect to the server.', 'data' => []];
+        }
+
+        $httpStatus = $http_response_header[0];
+        preg_match('/\d{3}/', $httpStatus, $matches);
+        $statusCode = isset($matches[0]) ? (int)$matches[0] : 500;
+
+        if ($statusCode !== 200) {
+            return ['status' => $statusCode, 'message' => 'HTTP request failed with status: ' . $httpStatus, 'data' => []];
         }
 
         return ['status' => 200, 'data' => json_decode($response, true)];
