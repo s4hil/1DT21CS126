@@ -1,5 +1,7 @@
+// src/Products.js
 import React, { useEffect, useState } from 'react';
 import FilterForm from './FilterForm';
+import Product from './SingleProduct';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -19,34 +21,28 @@ const Products = () => {
       .then(data => {
         setProducts(data);
         setFilteredProducts(data);
-        console.log(data);
       })
       .catch(error => console.error('Error fetching products:', error));
   }, [authToken]);
 
-  useEffect(() => {
+  const handleFilterSubmit = (event) => {
+    event.preventDefault();
     setFilteredProducts(
       products.filter(product =>
         (filters.name === '' || product.name.toLowerCase().includes(filters.name.toLowerCase())) &&
         (filters.category === '' || product.category.toLowerCase().includes(filters.category.toLowerCase()))
       )
     );
-  }, [filters, products]);
+  };
 
   return (
     <div className="container">
       <h1 className="my-4">Products</h1>
-      <FilterForm filters={filters} setFilters={setFilters} />
+      <FilterForm filters={filters} setFilters={setFilters} onSubmit={handleFilterSubmit} />
       <div className="row">
         {filteredProducts.map(product => (
           <div key={product.id} className="col-md-4 mb-4">
-            <div className="card">
-              <div className="card-body">
-                <h5 className="card-title">{product.name}</h5>
-                <p className="card-text">{product.category}</p>
-                <p className="card-text">${product.price}</p>
-              </div>
-            </div>
+            <Product product={product} />
           </div>
         ))}
       </div>
